@@ -26,6 +26,7 @@ export default function ExtractionFormPage() {
     drink_type: 'americano_hot',
     shot_dose: '',
     shot_yield: '',
+    shot_time: '',
     shot_grind: '',
     drink_water: '',
     drink_milk: '',
@@ -98,6 +99,7 @@ export default function ExtractionFormPage() {
       drink_type: form.drink_type,
       shot_dose:   form.shot_dose   ? Number(form.shot_dose)   : null,
       shot_yield:  form.shot_yield  ? Number(form.shot_yield)  : null,
+      shot_time:   form.shot_time   ? Number(form.shot_time)   : null,
       shot_grind:  form.shot_grind  ? Number(form.shot_grind)  : null,
       drink_water: form.drink_water ? Number(form.drink_water) : null,
       drink_milk:  form.drink_milk  ? Number(form.drink_milk)  : null,
@@ -196,14 +198,18 @@ export default function ExtractionFormPage() {
         {/* 샷 추출 정보 */}
         <div className="bg-white rounded-2xl p-4 border border-coffee-100 space-y-3">
           <p className={sectionCls}>샷 추출 정보</p>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs text-coffee-400 mb-1 block">🌀 그라인드</label>
+              <input className={inputCls} type="number" min="1" max="20" value={form.shot_grind} onChange={(e) => set('shot_grind', e.target.value)} placeholder="10" />
+            </div>
             <div>
               <label className="text-xs text-coffee-400 mb-1 block">⚖️ 도징량 (g)</label>
               <input className={inputCls} type="number" step="0.1" value={form.shot_dose} onChange={(e) => set('shot_dose', e.target.value)} placeholder="18" />
             </div>
             <div>
-              <label className="text-xs text-coffee-400 mb-1 block">🌀 그라인드</label>
-              <input className={inputCls} type="number" min="1" max="20" value={form.shot_grind} onChange={(e) => set('shot_grind', e.target.value)} placeholder="10" />
+              <label className="text-xs text-coffee-400 mb-1 block">⏱️ 추출시간 (초)</label>
+              <input className={inputCls} type="number" value={form.shot_time} onChange={(e) => set('shot_time', e.target.value)} placeholder="28" />
             </div>
             <div>
               <label className="text-xs text-coffee-400 mb-1 block">🫙 추출량 (g)</label>
