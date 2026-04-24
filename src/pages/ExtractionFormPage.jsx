@@ -23,12 +23,13 @@ export default function ExtractionFormPage() {
   const [form, setForm] = useState({
     bean_id: paramBeanId || '',
     extracted_at: localDatetimeNow(),
-    drink_type: 'espresso',
+    drink_type: 'americano_hot',
     shot_dose: '',
     shot_yield: '',
     shot_time: '',
     drink_water: '',
     drink_milk: '',
+    drink_ice: '',
     has_ice: false,
     taste_overall: 0,
     taste_acidity: 0,
@@ -65,6 +66,7 @@ export default function ExtractionFormPage() {
     set('has_ice', info.hasIce)
     if (!info.hasWater) set('drink_water', '')
     if (!info.hasMilk)  set('drink_milk', '')
+    if (!info.hasIce)   set('drink_ice', '')
   }
 
   function fillFromRecipe() {
@@ -99,6 +101,7 @@ export default function ExtractionFormPage() {
       shot_time:   form.shot_time   ? Number(form.shot_time)   : null,
       drink_water: form.drink_water ? Number(form.drink_water) : null,
       drink_milk:  form.drink_milk  ? Number(form.drink_milk)  : null,
+      drink_ice:   form.drink_ice   ? Number(form.drink_ice)   : null,
       has_ice: form.has_ice,
       taste_overall:    form.taste_overall    || null,
       taste_acidity:    form.taste_acidity    || null,
@@ -115,6 +118,9 @@ export default function ExtractionFormPage() {
   }
 
   const drinkInfo = DRINK_TYPES[form.drink_type]
+  const iceTotal = drinkInfo?.hasIce
+    ? (drinkInfo.hasWater ? (Number(form.drink_water) || 0) : (Number(form.drink_milk) || 0)) + (Number(form.drink_ice) || 0)
+    : 0
 
   if (loading) return (
     <div className="flex justify-center py-20"><Loader2 className="animate-spin text-coffee-400" size={28} /></div>
@@ -223,7 +229,15 @@ export default function ExtractionFormPage() {
               </div>
             )}
             {drinkInfo.hasIce && (
-              <p className="text-xs text-coffee-400">🧊 얼음 포함</p>
+              <div>
+                <label className="text-xs text-coffee-400 mb-1 block">얼음 양 (g)</label>
+                <input className={inputCls} type="number" value={form.drink_ice} onChange={(e) => set('drink_ice', e.target.value)} placeholder="100" />
+              </div>
+            )}
+            {iceTotal > 0 && (
+              <p className="pt-2 border-t border-coffee-100 text-sm text-coffee-500 text-right">
+                {drinkInfo.hasWater ? '물' : '우유'} + 얼음 = <span className="font-semibold text-coffee-700">{iceTotal}g</span>
+              </p>
             )}
           </div>
         )}

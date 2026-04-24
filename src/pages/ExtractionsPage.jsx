@@ -46,8 +46,15 @@ function ExtractionItem({ extraction, beanName, shotNumber, onDelete }) {
             {extraction.shot_time && <span>{extraction.shot_time}초</span>}
             {extraction.drink_water && <span>물 {extraction.drink_water}g</span>}
             {extraction.drink_milk && <span>우유 {extraction.drink_milk}g</span>}
-            {extraction.has_ice && <span>얼음</span>}
+            {extraction.drink_ice && <span>얼음 {extraction.drink_ice}g</span>}
           </div>
+          {drinkInfo?.hasIce && extraction.drink_ice > 0 && (
+            <p className="text-xs text-coffee-400">
+              {drinkInfo.hasWater ? '물' : '우유'} + 얼음 = 합계 {drinkInfo.hasWater
+                ? Number(extraction.drink_water || 0) + Number(extraction.drink_ice)
+                : Number(extraction.drink_milk || 0) + Number(extraction.drink_ice)}g
+            </p>
+          )}
 
           {TASTE_FIELDS.filter(f => extraction[f.key] > 0).length > 0 && (
             <div className="space-y-1">

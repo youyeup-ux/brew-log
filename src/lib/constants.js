@@ -12,7 +12,6 @@ export const ROAST_LEVELS = {
 }
 
 export const DRINK_TYPES = {
-  espresso:       { label: '에스프레소',        hasWater: false, hasMilk: false, hasIce: false },
   americano_hot:  { label: '아메리카노(HOT)',   hasWater: true,  hasMilk: false, hasIce: false },
   americano_iced: { label: '아메리카노(ICE)',   hasWater: true,  hasMilk: false, hasIce: true  },
   latte_hot:      { label: '카페라떼(HOT)',     hasWater: false, hasMilk: true,  hasIce: false },
