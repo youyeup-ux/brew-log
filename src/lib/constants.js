@@ -12,10 +12,14 @@ export const ROAST_LEVELS = {
 }
 
 export const DRINK_TYPES = {
-  americano_hot:  { label: '아메리카노(HOT)',   hasWater: true,  hasMilk: false, hasIce: false },
-  americano_iced: { label: '아메리카노(ICE)',   hasWater: true,  hasMilk: false, hasIce: true  },
-  latte_hot:      { label: '카페라떼(HOT)',     hasWater: false, hasMilk: true,  hasIce: false },
-  latte_iced:     { label: '카페라떼(ICE)',     hasWater: false, hasMilk: true,  hasIce: true  },
+  americano_iced: { label: '아메리카노(아아)', hasWater: true,  hasMilk: false, hasIce: true  },
+  americano_hot:  { label: '아메리카노(따아)', hasWater: true,  hasMilk: false, hasIce: false },
+  latte_iced:     { label: '라떼(아라)',       hasWater: false, hasMilk: true,  hasIce: true  },
+  latte_hot:      { label: '라떼(따라)',       hasWater: false, hasMilk: true,  hasIce: false },
+  espresso:       { label: '에스프레소',       hasWater: false, hasMilk: false, hasIce: false },
+  cappuccino:     { label: '카푸치노',         hasWater: false, hasMilk: true,  hasIce: false },
+  flat_white:     { label: '플랫화이트',       hasWater: false, hasMilk: true,  hasIce: false },
+  other:          { label: '기타',             hasWater: false, hasMilk: false, hasIce: false },
 }
 
 export const TASTE_FIELDS = [

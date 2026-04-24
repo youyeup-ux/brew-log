@@ -26,7 +26,7 @@ export default function ExtractionFormPage() {
     drink_type: 'americano_hot',
     shot_dose: '',
     shot_yield: '',
-    shot_time: '',
+    shot_grind: '',
     drink_water: '',
     drink_milk: '',
     drink_ice: '',
@@ -98,7 +98,7 @@ export default function ExtractionFormPage() {
       drink_type: form.drink_type,
       shot_dose:   form.shot_dose   ? Number(form.shot_dose)   : null,
       shot_yield:  form.shot_yield  ? Number(form.shot_yield)  : null,
-      shot_time:   form.shot_time   ? Number(form.shot_time)   : null,
+      shot_grind:  form.shot_grind  ? Number(form.shot_grind)  : null,
       drink_water: form.drink_water ? Number(form.drink_water) : null,
       drink_milk:  form.drink_milk  ? Number(form.drink_milk)  : null,
       drink_ice:   form.drink_ice   ? Number(form.drink_ice)   : null,
@@ -198,16 +198,16 @@ export default function ExtractionFormPage() {
           <p className={sectionCls}>샷 추출 정보</p>
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <label className="text-xs text-coffee-400 mb-1 block">도징량 (g)</label>
+              <label className="text-xs text-coffee-400 mb-1 block">⚖️ 도징량 (g)</label>
               <input className={inputCls} type="number" step="0.1" value={form.shot_dose} onChange={(e) => set('shot_dose', e.target.value)} placeholder="18" />
             </div>
             <div>
-              <label className="text-xs text-coffee-400 mb-1 block">추출량 (g)</label>
-              <input className={inputCls} type="number" step="0.1" value={form.shot_yield} onChange={(e) => set('shot_yield', e.target.value)} placeholder="36" />
+              <label className="text-xs text-coffee-400 mb-1 block">🌀 그라인드</label>
+              <input className={inputCls} type="number" min="1" max="20" value={form.shot_grind} onChange={(e) => set('shot_grind', e.target.value)} placeholder="10" />
             </div>
             <div>
-              <label className="text-xs text-coffee-400 mb-1 block">추출시간 (초)</label>
-              <input className={inputCls} type="number" value={form.shot_time} onChange={(e) => set('shot_time', e.target.value)} placeholder="28" />
+              <label className="text-xs text-coffee-400 mb-1 block">🫙 추출량 (g)</label>
+              <input className={inputCls} type="number" step="0.1" value={form.shot_yield} onChange={(e) => set('shot_yield', e.target.value)} placeholder="36" />
             </div>
           </div>
         </div>
@@ -218,19 +218,19 @@ export default function ExtractionFormPage() {
             <p className={sectionCls}>음료 레시피</p>
             {drinkInfo.hasWater && (
               <div>
-                <label className="text-xs text-coffee-400 mb-1 block">물량 (g)</label>
+                <label className="text-xs text-coffee-400 mb-1 block">💧 물 (g)</label>
                 <input className={inputCls} type="number" value={form.drink_water} onChange={(e) => set('drink_water', e.target.value)} placeholder="120" />
               </div>
             )}
             {drinkInfo.hasMilk && (
               <div>
-                <label className="text-xs text-coffee-400 mb-1 block">우유량 (g)</label>
+                <label className="text-xs text-coffee-400 mb-1 block">🥛 우유 (g)</label>
                 <input className={inputCls} type="number" value={form.drink_milk} onChange={(e) => set('drink_milk', e.target.value)} placeholder="150" />
               </div>
             )}
             {drinkInfo.hasIce && (
               <div>
-                <label className="text-xs text-coffee-400 mb-1 block">얼음 양 (g)</label>
+                <label className="text-xs text-coffee-400 mb-1 block">🧊 얼음 (g)</label>
                 <input className={inputCls} type="number" value={form.drink_ice} onChange={(e) => set('drink_ice', e.target.value)} placeholder="100" />
               </div>
             )}

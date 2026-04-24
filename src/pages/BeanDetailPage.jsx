@@ -22,7 +22,7 @@ function RecipeSection({ recipe }) {
             <p className="text-sm font-medium text-coffee-700 mb-1">에스프레소</p>
             <div className="text-sm text-coffee-600 space-y-0.5">
               {(espresso.dose || espresso.yield) && (
-                <p>{espresso.dose && `도징 ${espresso.dose}g`}{espresso.dose && espresso.yield && ' / '}{espresso.yield && `추출 ${espresso.yield}g`}</p>
+                <p>{espresso.dose && `도징량 ${espresso.dose}g`}{espresso.dose && espresso.yield && ' / '}{espresso.yield && `추출 ${espresso.yield}g`}</p>
               )}
               {(espresso.time_min || espresso.time_max) && (
                 <p>추출시간 {espresso.time_min}~{espresso.time_max}초</p>
@@ -77,12 +77,13 @@ function ExtractionCard({ extraction, shotNumber }) {
       </div>
 
       <div className="mt-2 flex flex-wrap gap-3 text-sm text-coffee-600">
-        {extraction.shot_dose && <span>도징 {extraction.shot_dose}g</span>}
-        {extraction.shot_yield && <span>추출 {extraction.shot_yield}g</span>}
-        {extraction.shot_time && <span>{extraction.shot_time}초</span>}
-        {extraction.drink_water && <span>물 {extraction.drink_water}g</span>}
-        {extraction.drink_milk && <span>우유 {extraction.drink_milk}g</span>}
-        {extraction.drink_ice && <span>얼음 {extraction.drink_ice}g</span>}
+        {extraction.shot_dose  && <span>⚖️ 도징량 {extraction.shot_dose}g</span>}
+        {extraction.shot_grind && <span>🌀 그라인드 {extraction.shot_grind}</span>}
+        {extraction.shot_yield && <span>🫙 추출량 {extraction.shot_yield}g</span>}
+        {extraction.shot_time  && <span>⏱️ 추출시간 {extraction.shot_time}초</span>}
+        {extraction.drink_water && <span>💧 물 {extraction.drink_water}g</span>}
+        {extraction.drink_milk  && <span>🥛 우유 {extraction.drink_milk}g</span>}
+        {extraction.drink_ice   && <span>🧊 얼음 {extraction.drink_ice}g</span>}
       </div>
       {drinkInfo?.hasIce && extraction.drink_ice > 0 && (
         <p className="mt-1 text-xs text-coffee-400">
