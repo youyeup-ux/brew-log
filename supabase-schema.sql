@@ -52,6 +52,9 @@ create table if not exists machine (
   created_at    timestamptz default now()
 );
 
+-- open_date 컬럼 추가 (이미 테이블이 존재하는 경우 아래 ALTER 실행)
+alter table beans add column if not exists open_date date;
+
 -- RLS (Row Level Security) 활성화
 alter table beans       enable row level security;
 alter table extractions enable row level security;

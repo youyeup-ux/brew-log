@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Loader2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { BEAN_TYPES, ROAST_LEVELS } from '../lib/constants'
+import { BEAN_TYPES, ROAST_LEVELS, getFreshness } from '../lib/constants'
 
 const FILTERS = [
   { value: 'active',    label: '사용중' },
@@ -10,7 +10,26 @@ const FILTERS = [
   { value: 'all',       label: '전체'   },
 ]
 
-function BeanCard({ bean, onClick }) {
+function RemainingBar({ capacityG, usedDose }) {
+  if (!capacityG) return null
+  const remainPct = Math.max(0, Math.min(100, ((capacityG - (usedDose || 0)) / capacityG) * 100))
+  const barColor = remainPct >= 50 ? 'bg-orange-400' : remainPct >= 20 ? 'bg-yellow-400' : 'bg-red-500'
+  const remainG = Math.max(0, capacityG - (usedDose || 0))
+  return (
+    <div className="mt-2">
+      <div className="flex justify-between text-xs text-coffee-400 mb-1">
+        <span>잔량</span>
+        <span>{Math.round(remainPct)}% ({remainG.toFixed(0)}g)</span>
+      </div>
+      <div className="h-1.5 bg-coffee-100 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${remainPct}%` }} />
+      </div>
+    </div>
+  )
+}
+
+function BeanCard({ bean, usedDose, onClick }) {
+  const freshness = getFreshness(bean.open_date)
   return (
     <div
       onClick={onClick}
@@ -21,7 +40,12 @@ function BeanCard({ bean, onClick }) {
           <p className="text-xs text-coffee-400">{bean.brand}</p>
           <h3 className="font-semibold text-coffee-800 truncate">{bean.name}</h3>
         </div>
-        <div className="flex gap-1 flex-shrink-0">
+        <div className="flex flex-wrap gap-1 flex-shrink-0 justify-end">
+          {freshness && (
+            <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${freshness.bg} ${freshness.text}`}>
+              {freshness.label}
+            </span>
+          )}
           <span className="text-xs bg-coffee-100 text-coffee-600 px-2 py-0.5 rounded-full whitespace-nowrap">
             {BEAN_TYPES[bean.type]}
           </span>
@@ -51,6 +75,8 @@ function BeanCard({ bean, onClick }) {
         </p>
       )}
 
+      <RemainingBar capacityG={bean.capacity_g} usedDose={usedDose} />
+
       {bean.is_exhausted && (
         <span className="inline-block mt-2 text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full">소진됨</span>
       )}
@@ -60,20 +86,26 @@ function BeanCard({ bean, onClick }) {
 
 export default function BeansPage() {
   const [beans, setBeans] = useState([])
+  const [doseMap, setDoseMap] = useState({})
   const [filter, setFilter] = useState('active')
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
   useEffect(() => {
-    fetchBeans()
+    fetchData()
   }, [])
 
-  async function fetchBeans() {
-    const { data } = await supabase
-      .from('beans')
-      .select('*')
-      .order('created_at', { ascending: false })
-    setBeans(data || [])
+  async function fetchData() {
+    const [{ data: beanData }, { data: extData }] = await Promise.all([
+      supabase.from('beans').select('*').order('created_at', { ascending: false }),
+      supabase.from('extractions').select('bean_id, shot_dose'),
+    ])
+    setBeans(beanData || [])
+    const map = {}
+    for (const e of (extData || [])) {
+      if (e.shot_dose) map[e.bean_id] = (map[e.bean_id] || 0) + Number(e.shot_dose)
+    }
+    setDoseMap(map)
     setLoading(false)
   }
 
@@ -119,6 +151,7 @@ export default function BeansPage() {
             <BeanCard
               key={bean.id}
               bean={bean}
+              usedDose={doseMap[bean.id] || 0}
               onClick={() => navigate(`/beans/${bean.id}`)}
             />
           ))

@@ -26,3 +26,14 @@ export const TASTE_FIELDS = [
   { key: 'taste_body',       label: '바디' },
   { key: 'taste_sweetness',  label: '단맛' },
 ]
+
+export function getFreshness(openDate) {
+  if (!openDate) return null
+  const days = Math.floor((Date.now() - new Date(openDate).getTime()) / 86400000)
+  if (days <= 7)  return { label: 'PEAK',     bg: 'bg-green-500',  text: 'text-white',      days }
+  if (days <= 14) return { label: 'BEST',     bg: 'bg-green-300',  text: 'text-green-900',  days }
+  if (days <= 30) return { label: 'GOOD',     bg: 'bg-orange-400', text: 'text-white',      days }
+  if (days <= 60) return { label: 'NOT BAD',  bg: 'bg-yellow-400', text: 'text-yellow-900', days }
+  if (days <= 90) return { label: 'BAD',      bg: 'bg-red-400',    text: 'text-white',      days }
+  return                  { label: 'VERY BAD', bg: 'bg-red-700',   text: 'text-white',      days }
+}

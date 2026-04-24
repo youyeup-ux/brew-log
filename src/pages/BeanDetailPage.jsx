@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ChevronLeft, Pencil, Trash2, Coffee, Star, Plus, Loader2 } from 'lucide-react'
+import { ChevronLeft, Pencil, Trash2, Plus, Loader2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { BEAN_TYPES, ROAST_LEVELS, DRINK_TYPES } from '../lib/constants'
+import { BEAN_TYPES, ROAST_LEVELS, DRINK_TYPES, TASTE_FIELDS, getFreshness } from '../lib/constants'
 import { StarDisplay } from '../components/StarRating'
 
 function RecipeSection({ recipe }) {
@@ -11,7 +11,6 @@ function RecipeSection({ recipe }) {
   const hasEspresso = espresso?.dose || espresso?.yield || espresso?.time_min
   const hasAmericano = americano?.hot_water || americano?.iced_water
   const hasLatte = latte?.hot_milk || latte?.iced_milk
-
   if (!hasEspresso && !hasAmericano && !hasLatte) return null
 
   return (
@@ -56,20 +55,23 @@ function RecipeSection({ recipe }) {
   )
 }
 
-function ExtractionCard({ extraction }) {
+function ExtractionCard({ extraction, shotNumber }) {
   const drinkInfo = DRINK_TYPES[extraction.drink_type]
   return (
     <div className="bg-white rounded-2xl p-4 border border-coffee-100">
       <div className="flex justify-between items-start">
-        <div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {shotNumber && (
+            <span className="text-xs font-bold text-coffee-400">#{shotNumber}</span>
+          )}
           <span className="text-xs bg-coffee-100 text-coffee-600 px-2 py-0.5 rounded-full">
             {drinkInfo?.label ?? extraction.drink_type}
           </span>
           {extraction.is_best && (
-            <span className="ml-2 text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">⭐ 베스트</span>
+            <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">⭐ 베스트</span>
           )}
         </div>
-        <p className="text-xs text-coffee-300">
+        <p className="text-xs text-coffee-300 flex-shrink-0 ml-2">
           {new Date(extraction.extracted_at).toLocaleDateString('ko-KR')}
         </p>
       </div>
@@ -91,6 +93,25 @@ function ExtractionCard({ extraction }) {
       {extraction.memo && (
         <p className="mt-2 text-sm text-coffee-500 line-clamp-2">{extraction.memo}</p>
       )}
+    </div>
+  )
+}
+
+function RemainingBar({ capacityG, extractions }) {
+  if (!capacityG) return null
+  const usedDose = extractions.reduce((sum, e) => sum + (e.shot_dose ? Number(e.shot_dose) : 0), 0)
+  const remainPct = Math.max(0, Math.min(100, ((capacityG - usedDose) / capacityG) * 100))
+  const barColor = remainPct >= 50 ? 'bg-orange-400' : remainPct >= 20 ? 'bg-yellow-400' : 'bg-red-500'
+  const remainG = Math.max(0, capacityG - usedDose)
+  return (
+    <div className="mt-3 pt-3 border-t border-coffee-100">
+      <div className="flex justify-between text-xs text-coffee-400 mb-1.5">
+        <span>잔량</span>
+        <span>{Math.round(remainPct)}% ({remainG.toFixed(0)}g / {capacityG}g)</span>
+      </div>
+      <div className="h-2 bg-coffee-100 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${remainPct}%` }} />
+      </div>
     </div>
   )
 }
@@ -133,6 +154,12 @@ export default function BeanDetailPage() {
   )
   if (!bean) return <div className="text-center py-20 text-coffee-400">원두를 찾을 수 없습니다.</div>
 
+  const freshness = getFreshness(bean.open_date)
+
+  // extractions sorted newest-first → newest = #N, oldest = #1
+  const shotNumbers = {}
+  extractions.forEach((e, i) => { shotNumbers[e.id] = extractions.length - i })
+
   return (
     <div>
       <div className="sticky top-0 bg-coffee-50 z-10 flex items-center justify-between px-4 py-3 border-b border-coffee-100">
@@ -150,7 +177,6 @@ export default function BeanDetailPage() {
       </div>
 
       <div className="px-4 py-4 space-y-4">
-        {/* 원두 기본 정보 */}
         <div className="bg-white rounded-2xl p-4 border border-coffee-100">
           <div className="flex justify-between items-start">
             <div>
@@ -158,6 +184,11 @@ export default function BeanDetailPage() {
               <h2 className="text-xl font-bold text-coffee-800">{bean.name}</h2>
             </div>
             <div className="flex flex-col items-end gap-1">
+              {freshness && (
+                <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${freshness.bg} ${freshness.text}`}>
+                  {freshness.label} ({freshness.days}일)
+                </span>
+              )}
               <span className="text-xs bg-coffee-100 text-coffee-600 px-2 py-0.5 rounded-full">{BEAN_TYPES[bean.type]}</span>
               <span className="text-xs bg-coffee-200 text-coffee-700 px-2 py-0.5 rounded-full">{ROAST_LEVELS[bean.roast_level]}</span>
             </div>
@@ -166,6 +197,7 @@ export default function BeanDetailPage() {
           <div className="mt-3 space-y-1 text-sm text-coffee-600">
             {bean.origin && <p>원산지: {bean.origin}</p>}
             {bean.roast_date && <p>로스팅: {new Date(bean.roast_date).toLocaleDateString('ko-KR')}</p>}
+            {bean.open_date && <p>개봉일: {new Date(bean.open_date).toLocaleDateString('ko-KR')}</p>}
             {bean.capacity_g && <p>용량: {bean.capacity_g}g</p>}
             {bean.price && <p>가격: {bean.price.toLocaleString()}원</p>}
           </div>
@@ -181,6 +213,8 @@ export default function BeanDetailPage() {
           {bean.description && (
             <p className="mt-3 text-sm text-coffee-500 leading-relaxed">{bean.description}</p>
           )}
+
+          <RemainingBar capacityG={bean.capacity_g} extractions={extractions} />
 
           <div className="mt-4 pt-3 border-t border-coffee-100">
             <button
@@ -198,7 +232,6 @@ export default function BeanDetailPage() {
 
         <RecipeSection recipe={bean.recommended_recipe} />
 
-        {/* 추출 기록 */}
         <div>
           <div className="flex justify-between items-center mb-3">
             <p className="text-xs font-semibold text-coffee-400 uppercase tracking-wider">추출 기록 ({extractions.length})</p>
@@ -217,7 +250,7 @@ export default function BeanDetailPage() {
           ) : (
             <div className="space-y-3">
               {extractions.map((ex) => (
-                <ExtractionCard key={ex.id} extraction={ex} />
+                <ExtractionCard key={ex.id} extraction={ex} shotNumber={shotNumbers[ex.id]} />
               ))}
             </div>
           )}

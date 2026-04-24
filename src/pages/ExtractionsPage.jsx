@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 import { DRINK_TYPES, TASTE_FIELDS } from '../lib/constants'
 import { StarDisplay } from '../components/StarRating'
 
-function ExtractionItem({ extraction, beanName, onDelete }) {
+function ExtractionItem({ extraction, beanName, shotNumber, onDelete }) {
   const [expanded, setExpanded] = useState(false)
   const drinkInfo = DRINK_TYPES[extraction.drink_type]
 
@@ -17,6 +17,9 @@ function ExtractionItem({ extraction, beanName, onDelete }) {
       >
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
+            {shotNumber && (
+              <span className="text-xs font-bold text-coffee-400">#{shotNumber}</span>
+            )}
             <span className="text-xs bg-coffee-100 text-coffee-600 px-2 py-0.5 rounded-full whitespace-nowrap">
               {drinkInfo?.label ?? extraction.drink_type}
             </span>
@@ -101,6 +104,18 @@ export default function ExtractionsPage() {
     setExtractions((prev) => prev.filter((e) => e.id !== id))
   }
 
+  // 원두별 샷 넘버링: extracted_at 오름차순 기준으로 #1부터 부여
+  const shotNumbers = {}
+  const beanGroups = {}
+  for (const e of extractions) {
+    if (!beanGroups[e.bean_id]) beanGroups[e.bean_id] = []
+    beanGroups[e.bean_id].push(e)
+  }
+  for (const exts of Object.values(beanGroups)) {
+    const sorted = [...exts].sort((a, b) => new Date(a.extracted_at) - new Date(b.extracted_at))
+    sorted.forEach((e, i) => { shotNumbers[e.id] = i + 1 })
+  }
+
   return (
     <div>
       <div className="sticky top-0 bg-coffee-50 z-10 px-4 pt-5 pb-3">
@@ -123,6 +138,7 @@ export default function ExtractionsPage() {
               key={ex.id}
               extraction={ex}
               beanName={beans[ex.bean_id] ?? '알 수 없는 원두'}
+              shotNumber={shotNumbers[ex.id]}
               onDelete={handleDelete}
             />
           ))

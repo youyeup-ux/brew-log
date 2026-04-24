@@ -14,6 +14,7 @@ const EMPTY_FORM = {
   capacity_g: '',
   price: '',
   roast_date: '',
+  open_date: '',
   flavor_tags: [],
   description: '',
   recommended_recipe: {
@@ -48,6 +49,7 @@ export default function BeanFormPage() {
         capacity_g: data.capacity_g ?? '',
         price: data.price ?? '',
         roast_date: data.roast_date ?? '',
+        open_date: data.open_date ?? '',
         recommended_recipe: {
           espresso:  data.recommended_recipe?.espresso  ?? EMPTY_FORM.recommended_recipe.espresso,
           americano: data.recommended_recipe?.americano ?? EMPTY_FORM.recommended_recipe.americano,
@@ -89,6 +91,7 @@ export default function BeanFormPage() {
       capacity_g: num(form.capacity_g),
       price: num(form.price),
       roast_date: form.roast_date || null,
+      open_date: form.open_date || null,
       flavor_tags: form.flavor_tags,
       description: form.description.trim() || null,
       recommended_recipe: {
@@ -175,9 +178,15 @@ export default function BeanFormPage() {
           </div>
         </div>
 
-        <div>
-          <label className={labelCls}>로스팅 날짜</label>
-          <input className={inputCls} type="date" value={form.roast_date} onChange={(e) => set('roast_date', e.target.value)} />
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <label className={labelCls}>로스팅 날짜</label>
+            <input className={inputCls} type="date" value={form.roast_date} onChange={(e) => set('roast_date', e.target.value)} />
+          </div>
+          <div className="flex-1">
+            <label className={labelCls}>개봉일</label>
+            <input className={inputCls} type="date" value={form.open_date} onChange={(e) => set('open_date', e.target.value)} />
+          </div>
         </div>
 
         <div>
