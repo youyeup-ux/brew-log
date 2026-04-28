@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ChevronLeft, Loader2, Star } from 'lucide-react'
+import { ChevronLeft, Loader2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { DRINK_TYPES, TASTE_FIELDS } from '../lib/constants'
 import { StarRating } from '../components/StarRating'
@@ -9,10 +9,10 @@ const inputCls = 'w-full border border-coffee-200 rounded-xl px-3 py-2.5 bg-whit
 const labelCls = 'block text-sm font-medium text-coffee-600 mb-1'
 const sectionCls = 'text-xs font-semibold text-coffee-400 uppercase tracking-wider mb-3'
 
-function localDatetimeNow() {
+function localDateNow() {
   const d = new Date()
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
-  return d.toISOString().slice(0, 16)
+  return d.toISOString().slice(0, 10)
 }
 
 export default function ExtractionFormPage() {
@@ -22,7 +22,7 @@ export default function ExtractionFormPage() {
   const [beans, setBeans] = useState([])
   const [form, setForm] = useState({
     bean_id: paramBeanId || '',
-    extracted_at: localDatetimeNow(),
+    extracted_at: localDateNow(),
     drink_type: 'americano_hot',
     shot_dose: '',
     shot_yield: '',
@@ -58,34 +58,62 @@ export default function ExtractionFormPage() {
   }
 
   function set(field, value) {
-    setForm((prev) => ({ ...prev, [field]: value }))
+    setForm(prev => ({ ...prev, [field]: value }))
   }
 
   function handleDrinkTypeChange(type) {
     const info = DRINK_TYPES[type]
-    set('drink_type', type)
-    set('has_ice', info.hasIce)
-    if (!info.hasWater) set('drink_water', '')
-    if (!info.hasMilk)  set('drink_milk', '')
-    if (!info.hasIce)   set('drink_ice', '')
+    setForm(prev => ({
+      ...prev,
+      drink_type: type,
+      has_ice: info.hasIce,
+      drink_water: info.hasWater ? prev.drink_water : '',
+      drink_milk:  info.hasMilk  ? prev.drink_milk  : '',
+      drink_ice:   info.hasIce   ? prev.drink_ice   : '',
+    }))
   }
 
   function fillFromRecipe() {
-    const bean = beans.find((b) => b.id === form.bean_id)
+    const bean = beans.find(b => b.id === form.bean_id)
     if (!bean?.recommended_recipe) return
     const rec = bean.recommended_recipe
     const type = form.drink_type
-    const newForm = { ...form }
+    setForm(prev => {
+      const next = { ...prev }
+      if (rec.espresso?.dose)  next.shot_dose  = String(rec.espresso.dose)
+      if (rec.espresso?.yield) next.shot_yield = String(rec.espresso.yield)
+      if (type === 'americano_hot'  && rec.americano?.hot_water)  next.drink_water = String(rec.americano.hot_water)
+      if (type === 'americano_iced' && rec.americano?.iced_water) next.drink_water = String(rec.americano.iced_water)
+      if (type === 'latte_hot'      && rec.latte?.hot_milk)       next.drink_milk  = String(rec.latte.hot_milk)
+      if (type === 'latte_iced'     && rec.latte?.iced_milk)      next.drink_milk  = String(rec.latte.iced_milk)
+      return next
+    })
+  }
 
-    if (rec.espresso?.dose)       newForm.shot_dose  = rec.espresso.dose
-    if (rec.espresso?.yield)      newForm.shot_yield = rec.espresso.yield
-
-    if (type === 'americano_hot'  && rec.americano?.hot_water)  newForm.drink_water = rec.americano.hot_water
-    if (type === 'americano_iced' && rec.americano?.iced_water) newForm.drink_water = rec.americano.iced_water
-    if (type === 'latte_hot'      && rec.latte?.hot_milk)        newForm.drink_milk  = rec.latte.hot_milk
-    if (type === 'latte_iced'     && rec.latte?.iced_milk)       newForm.drink_milk  = rec.latte.iced_milk
-
-    setForm(newForm)
+  async function fillFromBestRecipe() {
+    if (!form.bean_id) return
+    const { data } = await supabase
+      .from('extractions')
+      .select('*')
+      .eq('bean_id', form.bean_id)
+      .eq('is_best', true)
+      .order('extracted_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (!data) {
+      alert('이 원두의 베스트 레시피가 없습니다.')
+      return
+    }
+    setForm(prev => ({
+      ...prev,
+      shot_grind:  data.shot_grind  != null ? String(data.shot_grind)  : prev.shot_grind,
+      shot_dose:   data.shot_dose   != null ? String(data.shot_dose)   : prev.shot_dose,
+      shot_yield:  data.shot_yield  != null ? String(data.shot_yield)  : prev.shot_yield,
+      shot_time:   data.shot_time   != null ? String(data.shot_time)   : prev.shot_time,
+      drink_water: data.drink_water != null ? String(data.drink_water) : prev.drink_water,
+      drink_milk:  data.drink_milk  != null ? String(data.drink_milk)  : prev.drink_milk,
+      drink_ice:   data.drink_ice   != null ? String(data.drink_ice)   : prev.drink_ice,
+    }))
   }
 
   async function handleSubmit(e) {
@@ -144,11 +172,11 @@ export default function ExtractionFormPage() {
           <select
             className={inputCls}
             value={form.bean_id}
-            onChange={(e) => set('bean_id', e.target.value)}
+            onChange={e => set('bean_id', e.target.value)}
             required
           >
             <option value="">원두를 선택하세요</option>
-            {beans.map((b) => (
+            {beans.map(b => (
               <option key={b.id} value={b.id}>{b.brand} {b.name}</option>
             ))}
           </select>
@@ -159,9 +187,9 @@ export default function ExtractionFormPage() {
           <label className={labelCls}>추출 일시</label>
           <input
             className={inputCls}
-            type="datetime-local"
+            type="date"
             value={form.extracted_at}
-            onChange={(e) => set('extracted_at', e.target.value)}
+            onChange={e => set('extracted_at', e.target.value)}
           />
         </div>
 
@@ -184,15 +212,24 @@ export default function ExtractionFormPage() {
           </div>
         </div>
 
-        {/* 추천 레시피 불러오기 */}
+        {/* 레시피 불러오기 버튼 */}
         {form.bean_id && (
-          <button
-            type="button"
-            onClick={fillFromRecipe}
-            className="w-full py-2 bg-coffee-50 border border-coffee-200 text-coffee-600 rounded-xl text-sm font-medium"
-          >
-            ↑ 추천 레시피 불러오기
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={fillFromRecipe}
+              className="flex-1 py-2 bg-coffee-50 border border-coffee-200 text-coffee-600 rounded-xl text-sm font-medium"
+            >
+              📋 추천 레시피
+            </button>
+            <button
+              type="button"
+              onClick={fillFromBestRecipe}
+              className="flex-1 py-2 bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-xl text-sm font-medium"
+            >
+              ⭐ 베스트 레시피
+            </button>
+          </div>
         )}
 
         {/* 샷 추출 정보 */}
@@ -201,19 +238,19 @@ export default function ExtractionFormPage() {
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-xs text-coffee-400 mb-1 block">🌀 그라인드</label>
-              <input className={inputCls} type="number" min="1" max="20" value={form.shot_grind} onChange={(e) => set('shot_grind', e.target.value)} placeholder="10" />
+              <input className={inputCls} type="number" min="1" max="20" value={form.shot_grind} onChange={e => set('shot_grind', e.target.value)} placeholder="" />
             </div>
             <div>
               <label className="text-xs text-coffee-400 mb-1 block">⚖️ 도징량 (g)</label>
-              <input className={inputCls} type="number" step="0.1" value={form.shot_dose} onChange={(e) => set('shot_dose', e.target.value)} placeholder="18" />
-            </div>
-            <div>
-              <label className="text-xs text-coffee-400 mb-1 block">⏱️ 추출시간 (초)</label>
-              <input className={inputCls} type="number" value={form.shot_time} onChange={(e) => set('shot_time', e.target.value)} placeholder="28" />
+              <input className={inputCls} type="number" step="0.1" value={form.shot_dose} onChange={e => set('shot_dose', e.target.value)} placeholder="" />
             </div>
             <div>
               <label className="text-xs text-coffee-400 mb-1 block">🫙 추출량 (g)</label>
-              <input className={inputCls} type="number" step="0.1" value={form.shot_yield} onChange={(e) => set('shot_yield', e.target.value)} placeholder="36" />
+              <input className={inputCls} type="number" step="0.1" value={form.shot_yield} onChange={e => set('shot_yield', e.target.value)} placeholder="" />
+            </div>
+            <div>
+              <label className="text-xs text-coffee-400 mb-1 block">⏱️ 추출시간 (초)</label>
+              <input className={inputCls} type="number" value={form.shot_time} onChange={e => set('shot_time', e.target.value)} placeholder="" />
             </div>
           </div>
         </div>
@@ -222,22 +259,22 @@ export default function ExtractionFormPage() {
         {(drinkInfo.hasWater || drinkInfo.hasMilk) && (
           <div className="bg-white rounded-2xl p-4 border border-coffee-100 space-y-3">
             <p className={sectionCls}>음료 레시피</p>
-            {drinkInfo.hasWater && (
-              <div>
-                <label className="text-xs text-coffee-400 mb-1 block">💧 물 (g)</label>
-                <input className={inputCls} type="number" value={form.drink_water} onChange={(e) => set('drink_water', e.target.value)} placeholder="120" />
-              </div>
-            )}
             {drinkInfo.hasMilk && (
               <div>
                 <label className="text-xs text-coffee-400 mb-1 block">🥛 우유 (g)</label>
-                <input className={inputCls} type="number" value={form.drink_milk} onChange={(e) => set('drink_milk', e.target.value)} placeholder="150" />
+                <input className={inputCls} type="number" value={form.drink_milk} onChange={e => set('drink_milk', e.target.value)} placeholder="" />
+              </div>
+            )}
+            {drinkInfo.hasWater && (
+              <div>
+                <label className="text-xs text-coffee-400 mb-1 block">💧 물 (g)</label>
+                <input className={inputCls} type="number" value={form.drink_water} onChange={e => set('drink_water', e.target.value)} placeholder="" />
               </div>
             )}
             {drinkInfo.hasIce && (
               <div>
                 <label className="text-xs text-coffee-400 mb-1 block">🧊 얼음 (g)</label>
-                <input className={inputCls} type="number" value={form.drink_ice} onChange={(e) => set('drink_ice', e.target.value)} placeholder="100" />
+                <input className={inputCls} type="number" value={form.drink_ice} onChange={e => set('drink_ice', e.target.value)} placeholder="" />
               </div>
             )}
             {iceTotal > 0 && (
@@ -254,7 +291,7 @@ export default function ExtractionFormPage() {
           {TASTE_FIELDS.map(({ key, label }) => (
             <div key={key} className="flex items-center justify-between">
               <label className="text-sm text-coffee-600 w-14">{label}</label>
-              <StarRating value={form[key]} onChange={(v) => set(key, v)} />
+              <StarRating value={form[key]} onChange={v => set(key, v)} />
             </div>
           ))}
           <div>
@@ -263,7 +300,7 @@ export default function ExtractionFormPage() {
               className={`${inputCls} resize-none`}
               rows={3}
               value={form.memo}
-              onChange={(e) => set('memo', e.target.value)}
+              onChange={e => set('memo', e.target.value)}
               placeholder="맛, 향, 특이사항 등..."
             />
           </div>
@@ -274,7 +311,7 @@ export default function ExtractionFormPage() {
           <input
             type="checkbox"
             checked={form.is_best}
-            onChange={(e) => set('is_best', e.target.checked)}
+            onChange={e => set('is_best', e.target.checked)}
             className="w-5 h-5 rounded accent-yellow-500"
           />
           <div>

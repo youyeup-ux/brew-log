@@ -3,17 +3,42 @@ import { useNavigate } from 'react-router-dom'
 import { Plus, Loader2, ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { DRINK_TYPES, TASTE_FIELDS } from '../lib/constants'
-import { StarDisplay } from '../components/StarRating'
+import { StarRating, StarDisplay } from '../components/StarRating'
 
 function ExtractionItem({ extraction, beanName, shotNumber, onDelete }) {
   const [expanded, setExpanded] = useState(false)
+  const [taste, setTaste] = useState({
+    taste_overall:    extraction.taste_overall    || 0,
+    taste_acidity:    extraction.taste_acidity    || 0,
+    taste_bitterness: extraction.taste_bitterness || 0,
+    taste_body:       extraction.taste_body       || 0,
+    taste_sweetness:  extraction.taste_sweetness  || 0,
+    memo: extraction.memo || '',
+  })
+  const [savingRating, setSavingRating] = useState(false)
+  const [ratingSaved, setRatingSaved] = useState(false)
   const drinkInfo = DRINK_TYPES[extraction.drink_type]
+
+  async function saveRating() {
+    setSavingRating(true)
+    await supabase.from('extractions').update({
+      taste_overall:    taste.taste_overall    || null,
+      taste_acidity:    taste.taste_acidity    || null,
+      taste_bitterness: taste.taste_bitterness || null,
+      taste_body:       taste.taste_body       || null,
+      taste_sweetness:  taste.taste_sweetness  || null,
+      memo: taste.memo.trim() || null,
+    }).eq('id', extraction.id)
+    setSavingRating(false)
+    setRatingSaved(true)
+    setTimeout(() => setRatingSaved(false), 1500)
+  }
 
   return (
     <div className="bg-white rounded-2xl border border-coffee-100 overflow-hidden">
       <div
         className="flex items-center justify-between p-4 cursor-pointer"
-        onClick={() => setExpanded((v) => !v)}
+        onClick={() => setExpanded(v => !v)}
       >
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
@@ -33,44 +58,64 @@ function ExtractionItem({ extraction, beanName, shotNumber, onDelete }) {
           </p>
         </div>
         <div className="flex items-center gap-2 ml-2 flex-shrink-0">
-          {extraction.taste_overall > 0 && <StarDisplay value={extraction.taste_overall} />}
+          {taste.taste_overall > 0 && <StarDisplay value={taste.taste_overall} />}
           {expanded ? <ChevronUp size={16} className="text-coffee-300" /> : <ChevronDown size={16} className="text-coffee-300" />}
         </div>
       </div>
 
       {expanded && (
         <div className="px-4 pb-4 border-t border-coffee-50 pt-3 space-y-3">
+          {/* 그라인드 → 도징량 → 추출량 → 추출시간 → 우유/물 → 얼음 */}
           <div className="flex flex-wrap gap-3 text-sm text-coffee-600">
-            {extraction.shot_dose  && <span>⚖️ 도징량 {extraction.shot_dose}g</span>}
             {extraction.shot_grind && <span>🌀 그라인드 {extraction.shot_grind}</span>}
+            {extraction.shot_dose  && <span>⚖️ 도징량 {extraction.shot_dose}g</span>}
             {extraction.shot_yield && <span>🫙 추출량 {extraction.shot_yield}g</span>}
             {extraction.shot_time  && <span>⏱️ 추출시간 {extraction.shot_time}초</span>}
-            {extraction.drink_water && <span>💧 물 {extraction.drink_water}g</span>}
             {extraction.drink_milk  && <span>🥛 우유 {extraction.drink_milk}g</span>}
+            {extraction.drink_water && <span>💧 물 {extraction.drink_water}g</span>}
             {extraction.drink_ice   && <span>🧊 얼음 {extraction.drink_ice}g</span>}
           </div>
+
           {drinkInfo?.hasIce && extraction.drink_ice > 0 && (
             <p className="text-xs text-coffee-400">
-              {drinkInfo.hasWater ? '물' : '우유'} + 얼음 = 합계 {drinkInfo.hasWater
+              {drinkInfo.hasWater ? '물' : '우유'} + 얼음 = 합계{' '}
+              {drinkInfo.hasWater
                 ? Number(extraction.drink_water || 0) + Number(extraction.drink_ice)
                 : Number(extraction.drink_milk || 0) + Number(extraction.drink_ice)}g
             </p>
           )}
 
-          {TASTE_FIELDS.filter(f => extraction[f.key] > 0).length > 0 && (
-            <div className="space-y-1">
-              {TASTE_FIELDS.filter(f => extraction[f.key] > 0).map(({ key, label }) => (
-                <div key={key} className="flex items-center gap-2">
-                  <span className="text-xs text-coffee-400 w-10">{label}</span>
-                  <StarDisplay value={extraction[key]} />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {extraction.memo && (
-            <p className="text-sm text-coffee-500 bg-coffee-50 rounded-xl p-3">{extraction.memo}</p>
-          )}
+          {/* 맛 평가 - 언제든 수정 가능 */}
+          <div className="bg-coffee-50 rounded-xl p-3 space-y-2">
+            <p className="text-xs font-semibold text-coffee-400 uppercase tracking-wider">맛 평가</p>
+            {TASTE_FIELDS.map(({ key, label }) => (
+              <div key={key} className="flex items-center justify-between">
+                <span className="text-xs text-coffee-500 w-12">{label}</span>
+                <StarRating
+                  value={taste[key]}
+                  onChange={v => setTaste(prev => ({ ...prev, [key]: v }))}
+                  size="sm"
+                />
+              </div>
+            ))}
+            <textarea
+              className="w-full text-sm border border-coffee-200 rounded-lg px-2 py-1.5 bg-white text-coffee-700 focus:outline-none focus:border-coffee-400 resize-none mt-1"
+              rows={2}
+              value={taste.memo}
+              onChange={e => setTaste(prev => ({ ...prev, memo: e.target.value }))}
+              placeholder="메모..."
+            />
+            <button
+              onClick={saveRating}
+              disabled={savingRating}
+              className={`w-full py-2 rounded-lg text-xs font-semibold disabled:opacity-60 flex items-center justify-center gap-1 transition-colors ${
+                ratingSaved ? 'bg-green-500 text-white' : 'bg-coffee-600 text-white'
+              }`}
+            >
+              {savingRating && <Loader2 size={12} className="animate-spin" />}
+              {ratingSaved ? '✓ 저장됨' : '맛 평가 저장'}
+            </button>
+          </div>
 
           <button
             onClick={() => onDelete(extraction.id)}
@@ -109,10 +154,9 @@ export default function ExtractionsPage() {
   async function handleDelete(id) {
     if (!window.confirm('이 추출 기록을 삭제할까요?')) return
     await supabase.from('extractions').delete().eq('id', id)
-    setExtractions((prev) => prev.filter((e) => e.id !== id))
+    setExtractions(prev => prev.filter(e => e.id !== id))
   }
 
-  // 원두별 샷 넘버링: extracted_at 오름차순 기준으로 #1부터 부여
   const shotNumbers = {}
   const beanGroups = {}
   for (const e of extractions) {
@@ -141,7 +185,7 @@ export default function ExtractionsPage() {
             <p className="text-sm">추출 기록을 추가해보세요</p>
           </div>
         ) : (
-          extractions.map((ex) => (
+          extractions.map(ex => (
             <ExtractionItem
               key={ex.id}
               extraction={ex}
