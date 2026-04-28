@@ -20,9 +20,9 @@ function BestCard({ extraction }) {
 
       <div className="flex flex-wrap gap-3 text-sm text-coffee-700 font-medium">
         {extraction.shot_dose  && <span>⚖️ 도징량 {extraction.shot_dose}g</span>}
-        {extraction.shot_grind && <span>🌀 그라인드 {extraction.shot_grind}</span>}
         {extraction.shot_yield && <span>🫙 추출량 {extraction.shot_yield}g</span>}
         {extraction.shot_time  && <span>⏱️ 추출시간 {extraction.shot_time}초</span>}
+        {extraction.shot_grind && <span>🌀 그라인드 {extraction.shot_grind}</span>}
         {extraction.drink_water && <span>💧 물 {extraction.drink_water}g</span>}
         {extraction.drink_milk  && <span>🥛 우유 {extraction.drink_milk}g</span>}
         {extraction.drink_ice   && <span>🧊 얼음 {extraction.drink_ice}g</span>}
