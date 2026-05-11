@@ -6,6 +6,7 @@ import BeanDetailPage from './pages/BeanDetailPage'
 import ExtractionsPage from './pages/ExtractionsPage'
 import ExtractionFormPage from './pages/ExtractionFormPage'
 import BestRecipesPage from './pages/BestRecipesPage'
+import CleaningPage from './pages/CleaningPage'
 import SettingsPage from './pages/SettingsPage'
 
 export default function App() {
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="extractions/new" element={<ExtractionFormPage />} />
           <Route path="extractions/new/:beanId" element={<ExtractionFormPage />} />
           <Route path="best-recipes" element={<BestRecipesPage />} />
+          <Route path="cleaning" element={<CleaningPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>

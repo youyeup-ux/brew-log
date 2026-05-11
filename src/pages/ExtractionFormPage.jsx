@@ -19,8 +19,7 @@ export default function ExtractionFormPage() {
   const { beanId: paramBeanId } = useParams()
   const navigate = useNavigate()
 
-  const [beans, setBeans] = useState([])
-  const [form, setForm] = useState({
+  const emptyForm = {
     bean_id: paramBeanId || '',
     extracted_at: localDateNow(),
     drink_type: 'americano_hot',
@@ -39,22 +38,58 @@ export default function ExtractionFormPage() {
     taste_sweetness: 0,
     memo: '',
     is_best: false,
-  })
+  }
+
+  const [beans, setBeans] = useState([])
+  const [form, setForm] = useState(emptyForm)
+  const [autoFilled, setAutoFilled] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    loadBeans()
+    loadData()
   }, [])
 
-  async function loadBeans() {
-    const { data } = await supabase
-      .from('beans')
-      .select('id, brand, name, recommended_recipe')
-      .eq('is_exhausted', false)
-      .order('created_at', { ascending: false })
-    setBeans(data || [])
+  async function loadData() {
+    const [{ data: beansData }, { data: last }] = await Promise.all([
+      supabase
+        .from('beans')
+        .select('id, brand, name, recommended_recipe')
+        .eq('is_exhausted', false)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('extractions')
+        .select('*')
+        .order('extracted_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ])
+    setBeans(beansData || [])
+
+    if (last) {
+      const drinkType = last.drink_type ?? 'americano_hot'
+      setForm(prev => ({
+        ...prev,
+        bean_id:     paramBeanId || (last.bean_id ?? prev.bean_id),
+        drink_type:  drinkType,
+        has_ice:     DRINK_TYPES[drinkType]?.hasIce ?? prev.has_ice,
+        shot_grind:  last.shot_grind  != null ? String(last.shot_grind)  : '',
+        shot_dose:   last.shot_dose   != null ? String(last.shot_dose)   : '',
+        shot_yield:  last.shot_yield  != null ? String(last.shot_yield)  : '',
+        shot_time:   last.shot_time   != null ? String(last.shot_time)   : '',
+        drink_water: last.drink_water != null ? String(last.drink_water) : '',
+        drink_milk:  last.drink_milk  != null ? String(last.drink_milk)  : '',
+        drink_ice:   last.drink_ice   != null ? String(last.drink_ice)   : '',
+      }))
+      setAutoFilled(true)
+    }
+
     setLoading(false)
+  }
+
+  function resetForm() {
+    setForm({ ...emptyForm })
+    setAutoFilled(false)
   }
 
   function set(field, value) {
@@ -166,6 +201,20 @@ export default function ExtractionFormPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="px-4 py-4 space-y-4">
+        {/* 이전 기록 자동 불러옴 배너 */}
+        {autoFilled && (
+          <div className="flex items-center justify-between bg-coffee-50 border border-coffee-200 rounded-xl px-3 py-2.5">
+            <span className="text-sm text-coffee-600">↩️ 이전 기록 불러옴</span>
+            <button
+              type="button"
+              onClick={resetForm}
+              className="text-xs text-coffee-400 border border-coffee-200 rounded-lg px-2.5 py-1 bg-white active:bg-coffee-50"
+            >
+              초기화
+            </button>
+          </div>
+        )}
+
         {/* 원두 선택 */}
         <div>
           <label className={labelCls}>원두 *</label>

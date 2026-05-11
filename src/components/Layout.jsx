@@ -1,11 +1,16 @@
 import { Outlet, NavLink } from 'react-router-dom'
 import { Package, Coffee, Star, Settings } from 'lucide-react'
 
+function BroomIcon({ size }) {
+  return <span style={{ fontSize: size * 0.85, lineHeight: 1 }}>🧹</span>
+}
+
 const navItems = [
-  { to: '/beans',        icon: Package, label: '원두'   },
-  { to: '/extractions',  icon: Coffee,  label: '추출'   },
-  { to: '/best-recipes', icon: Star,    label: '베스트' },
-  { to: '/settings',     icon: Settings,label: '설정'   },
+  { to: '/beans',        icon: Package,  label: '원두'   },
+  { to: '/extractions',  icon: Coffee,   label: '추출'   },
+  { to: '/best-recipes', icon: Star,     label: '레시피' },
+  { to: '/cleaning',     icon: BroomIcon,label: '청소'   },
+  { to: '/settings',     icon: Settings, label: '설정'   },
 ]
 
 export default function Layout() {
